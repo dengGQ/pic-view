@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>最美图</title>
+	<link rel="stylesheet" type="text/css" href="../../javascripts/vue-photo-preview-plug/skin.css"/>
+	<style type="text/css">
+		body{
+			background: black;
+			padding: 0 0;
+			margin: 0 0;
+		}
+		#container{
+			column-gap: 0;
+			margin-bottom: 10px;
+		}
+		.masonry{
+			column-count: 1;
+		}
+		@media (min-width: 400px) {
+			.masonry{
+				column-count: 1;
+			}
+		}
+		@media (min-width: 800px) {
+			.masonry{
+				column-count: 2;
+			}
+		}
+		@media (min-width: 1200px) {
+			.masonry{
+				column-count: 3;
+			}
+		}
+		@media (min-width: 1600px) {
+			.masonry{
+				icolumn-count: 4;
+			}
+		}
+		.img-box{
+			break-inside: avoid;
+			box-sizing: border-box;
+			padding: 5px;
+		}
+		.img-title{
+			background: #FF34B3;
+			height: 44px;
+			line-height: 44px;
+			padding-left: 5px;
+			color: white;
+			background: linear-gradient(to left bottom, transparent 50%,rgba(225,0,0,.4) 0) no-repeat 100% 0 / 2em 2em,
+            linear-gradient(-135deg, transparent 1.5em, #18a 0)
+		}
+		.img-conten{
+			overflow: auto;
+		}
+		.nav{
+			width: 100%;
+			height: 44px;
+			line-height: 44px;
+			background: rgb(21,116,153);
+		}
+	</style>
+</head>
+<body>
+	<div class="masonry" id="container">
+		<div class="img-box" v-for="(o, index) in items">
+			<div class="img-title">{{o.title}}</div>
+			<div class="img-conten">
+				<img :preview-text='o.title' :preview='page' :data-pswp-uid='index' :src='o.imgpath'>
+			</div>
+		</div>
+		<div v-infinite-scroll="loadMore" infinite-scroll-disabled="busy" infinite-scroll-distance="10">   
+		</div> 
+	</div>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<script type="text/javascript" src="../../javascripts/jquery.min.js"></script>
+	<script type="text/javascript" src="https://unpkg.com/axios/dist/axios.min.js"></script>
+	<script type="text/javascript" src="https://unpkg.com/vue-infinite-scroll"></script>
+	<script type="text/javascript" src="../../javascripts/vue-photo-preview-plug/vue-photo-preview.js"></script>
+	<script type="text/javascript">
+		var options = {
+			fullscreenEl: true,
+			getDoubleTapZoom: function(isMouseClick, item) {
+				console.log(item)
+				return 3
+			}
+		}
+		Vue.use(vuePhotoPreview, options);
+		var vm = new Vue({
+				el: '#container',
+				data: {
+					items: [],
+					busy: false,
+					page: 0,
+        			pageSize: 15
+				},
+				methods:{
+					loadMore(){
+						this.busy=true;
+						setTimeout(()=>{
+							this.page++;
+							this.getItems(true)
+						},1000)
+						setTimeout(()=>{
+							this.$previewRefresh();
+						},2000)
+					},
+					getItems(split){
+						let param={//get请求的参数  
+					        pageSize: this.pageSize,  
+					        page: this.page,
+					    };
+					    axios.get('/getItems', {params:param}).then(res=>{
+					    	console.log(res)
+					    	if(res.status==200){
+					    		if(split){//split==true，需要滚动追加页数
+						        	this.items=this.items.concat(res.data);  
+						        	if(res.data.length==0){//返回0条数据，禁用滚动  
+						            	this.busy=true;  
+						            }else{  
+						            	this.busy = false;
+						            }
+						        }else{
+						        	console.log("======================")
+						            this.items = res.data;
+						        }
+					    	}else{
+					    		console.log("从服务器请求数据失败！");  
+					    	}
+					    })
+					}
+				}
+			})
+
+
+		function previewBigPic(self){
+			console.log($(self).attr('src'))
+		}
+	</script>
+</body>
+</html>
